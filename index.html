@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASCEND RPG</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div id="levelUpOverlay" class="level-up-overlay">
+  <div class="level-up-box">
+    <div class="level-up-glow"></div>
+    <p class="level-up-eyebrow">✦ &nbsp; LEVEL UP &nbsp; ✦</p>
+    <h2 id="levelUpNum">2</h2>
+    <div class="level-up-divider"></div>
+    <p class="level-up-bonus">Stats are earned through action.</p>
+    
+    <div id="evoSection" class="hidden" style="margin-top: 20px;">
+      <p class="level-up-eyebrow" style="margin-top:15px; color:var(--t2);">Your actions have shaped you. You qualify for:</p>
+      <div class="avatar" id="evoNewIcon" style="margin: 0 auto 10px; width:70px; height:70px; font-size:32px; background:var(--s1);">🥊</div>
+      <p style="font-weight:900; font-size:22px; margin-bottom:4px;" id="evoNewName">Brawler</p>
+      <p style="font-size:11px; color:var(--t2); text-transform:uppercase; letter-spacing:2px; margin-bottom:20px;" id="evoPathDesc">Path of Might</p>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+         <button onclick="acceptEvolution()" style="width:100%;">Evolve to this Class</button>
+         <button class="btn-secondary" onclick="declineEvolution()">Remain Current Class</button>
+      </div>
+    </div>
+
+    <button id="btnStandardContinue" onclick="closeLevelUp()">Continue →</button>
+  </div>
+</div>
+
+<div class="container">
+  <header class="main-header">
+    <h1>ASCEND</h1>
+    <p class="subtitle">Level Up In Real Life</p>
+    <button class="undo-btn" onclick="undoLastAction()">⟲ Undo</button>
+  </header>
+
+  <section id="tab-home" class="tab active">
+    <div class="profile-card">
+      <div class="avatar-wrap">
+        <div class="avatar-ring"></div>
+        <div id="avatar" class="avatar">⚔️</div>
+      </div>
+      <h2 id="classNameTitle">Novice</h2>
+      <p id="levelText">Level 1</p>
+      <div class="xp-track"><div id="xpFill" class="xp-fill"></div></div>
+      <p id="xpText">0 / 100 XP</p>
+    </div>
+
+    <div class="stats-grid" style="grid-template-columns: 1fr;">
+      <div class="stat-tile streak-tile" style="justify-content: center;">
+        <span class="tile-icon">🔥</span>
+        <div><p class="tile-label">Current Streak</p><p id="streak" class="tile-val">1 Day</p></div>
+      </div>
+    </div>
+
+    <!-- HEALTH SCORE (Continuous Pool) -->
+    <div class="card" style="border-color: var(--vit);">
+      <div class="card-header">
+        <p class="card-label" style="color: var(--vit);">❤️ HEALTH SCORE</p>
+        <span class="pill" id="xpMultiplierBadge" style="background: rgba(0,229,255,0.1); color: var(--vit); border-color: var(--vit); font-weight: 700;">1.0x XP Boost</span>
+      </div>
+      
+      <div style="display:flex; align-items:center; gap:15px; margin-bottom:18px;">
+        <div style="font-size:36px; font-weight:900; color:var(--vit); width:60px; text-align:center;" id="healthScoreDisplay">100</div>
+        <div style="flex:1;">
+          <p style="font-size:11px; color:var(--t2); margin-bottom:6px; letter-spacing:1px;">RECOVERS VIA WATER & SLEEP</p>
+          <div class="xp-track" style="height:10px; background:var(--s3);"><div id="healthFill" class="xp-fill" style="background:var(--vit); transition: width 0.5s; width: 100%;"></div></div>
+        </div>
+      </div>
+
+      <div class="stats-grid" style="margin-bottom:0;">
+        <div class="stat-tile" style="border-left-color: #3b8ef5; padding: 12px 10px;">
+          <span class="tile-icon" style="font-size:20px;">💧</span>
+          <div><p class="tile-label">Daily Water</p><p id="dailyWaterText" class="tile-val" style="font-size:14px;">0.0 / 3.0 L</p></div>
+        </div>
+        <div class="stat-tile" style="border-left-color: #9b59f5; padding: 12px 10px;">
+          <span class="tile-icon" style="font-size:20px;">💤</span>
+          <div><p class="tile-label">Daily Sleep</p><p id="dailySleepText" class="tile-val" style="font-size:14px;">0.0 / 7.0 hrs</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><p class="card-label">DAILY QUESTS</p><span class="pill">Resets midnight</span></div>
+      <div id="coreQuestList" class="quest-list"></div>
+    </div>
+  </section>
+
+  <section id="tab-quests" class="tab">
+    <div class="card">
+      <p class="card-label">ADDITIONAL TASKS (REPEATABLE)</p>
+      <p class="card-desc" style="font-size:11px; color:#888; margin-bottom:12px;">Diminishing stat returns to prevent spam.</p>
+      <div id="additionalTaskList" class="log-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><p class="card-label">WEEKLY CHALLENGES</p><span class="pill">Resets Monday</span></div>
+      <p class="card-desc" style="font-size:11px; color:#888; margin-bottom:12px;">Completes automatically as you log tasks.</p>
+      <div id="weeklyQuestList"></div>
+    </div>
+
+    <div class="card boss-card">
+      <div class="card-header"><p class="card-label">☠️ BOSS CHALLENGE</p><span class="pill pill-fire">Legendary</span></div>
+      <p class="boss-desc">Defeat the Boss by completing all Core Daily Quests.</p>
+      <div class="boss-track"><div id="bossFill" class="boss-fill"></div></div>
+      <div class="boss-footer">
+        <span id="bossProgress" class="boss-prog">0 / 5</span>
+        <button id="bossClaimBtn" class="boss-claim hidden" onclick="claimBoss()">🎁 Claim XP</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-character" class="tab">
+    <div class="card" style="text-align:center; padding:24px 18px;">
+      <p class="card-label">CURRENT CLASS</p>
+      <h3 id="charClassLabel" style="font-size:24px; color:var(--gold); font-weight:900; margin-bottom:4px;">NOVICE</h3>
+      <p id="charPathLabel" style="font-size:12px; color:var(--t2); text-transform:uppercase; letter-spacing:2px; margin-bottom:12px;">The Blank Slate</p>
+    </div>
+
+    <div class="card">
+      <p class="card-label">ABILITY POINTS</p>
+      <div class="stat-rows">
+        <div class="stat-row">
+          <div class="stat-row-left"><span class="sr-icon">💪</span><span class="sr-name">Strength</span></div>
+          <div class="stat-row-right"><div class="sr-track"><div id="strengthBar" class="sr-fill str-color"></div></div><strong id="strengthStat">1</strong></div>
+        </div>
+        <div class="stat-group">
+          <div class="stat-group-header"><span class="sr-icon">🧠</span><span class="sr-name">Knowledge</span></div>
+          <div class="stat-row sub-stat">
+            <div class="stat-row-left"><span class="sr-icon">📖</span><span class="sr-name">General</span></div>
+            <div class="stat-row-right"><div class="sr-track"><div id="knowledgeGenBar" class="sr-fill kno-color"></div></div><strong id="knowledgeGenStat">1</strong></div>
+          </div>
+          <div class="stat-row sub-stat">
+            <div class="stat-row-left"><span class="sr-icon">📈</span><span class="sr-name">Finance</span></div>
+            <div class="stat-row-right"><div class="sr-track"><div id="knowledgeFinBar" class="sr-fill fin-color"></div></div><strong id="knowledgeFinStat">1</strong></div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-row-left"><span class="sr-icon">❤️</span><span class="sr-name">Vitality</span></div>
+          <div class="stat-row-right"><div class="sr-track"><div id="vitalityBar" class="sr-fill vit-color"></div></div><strong id="vitalityStat">1</strong></div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-row-left"><span class="sr-icon">⚡</span><span class="sr-name">Stamina</span></div>
+          <div class="stat-row-right"><div class="sr-track"><div id="staminaBar" class="sr-fill sta-color"></div></div><strong id="staminaStat">1</strong></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-progress" class="tab">
+    <div class="card" style="background: linear-gradient(135deg, var(--s1), var(--s2)); border-color: var(--gold);">
+      <p class="card-label" style="color: var(--gold);">⚡ QUICK SUMMARY</p>
+      <div class="stats-grid" style="margin-bottom: 0;">
+        <div class="stat-tile" style="border-left-color: var(--gold);">
+          <span class="tile-icon">🎯</span>
+          <div><p class="tile-label">Dominant Focus</p><p id="dominantFocus" class="tile-val" style="font-size: 13px;">Balanced</p></div>
+        </div>
+        <div class="stat-tile" style="border-left-color: var(--vit);">
+          <span class="tile-icon">📈</span>
+          <div><p class="tile-label">Days Active</p><p id="totalDaysActive" class="tile-val" style="font-size: 18px;">1</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WEEKLY VISUAL TRACKER -->
+    <div class="card">
+      <p class="card-label">📊 WEEKLY PROGRESS</p>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+         <div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:var(--t1);"><span>💧 Water Tracker</span><span id="wkWaterProgTxt" style="font-weight:700;">0 / 21 L</span></div>
+            <div class="w-bar" style="background:var(--s3); height:6px; border-radius:999px; overflow:hidden;"><div id="wkWaterBar" class="w-fill" style="background:#3b8ef5; width:0%; height:100%; transition:width 0.5s;"></div></div>
+         </div>
+         <div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:var(--t1);"><span>📚 Reading Target</span><span id="wkReadProgTxt" style="font-weight:700;">0 / 70 Pgs</span></div>
+            <div class="w-bar" style="background:var(--s3); height:6px; border-radius:999px; overflow:hidden;"><div id="wkReadBar" class="w-fill" style="background:#f0b429; width:0%; height:100%; transition:width 0.5s;"></div></div>
+         </div>
+         <div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:var(--t1);"><span>💪 Workout Frequency</span><span id="wkWktProgTxt" style="font-weight:700;">0 / 4</span></div>
+            <div class="w-bar" style="background:var(--s3); height:6px; border-radius:999px; overflow:hidden;"><div id="wkWktBar" class="w-fill" style="background:#f04040; width:0%; height:100%; transition:width 0.5s;"></div></div>
+         </div>
+      </div>
+    </div>
+
+    <!-- MONTHLY VISUAL TRACKER -->
+    <div class="card">
+      <p class="card-label">📈 MONTHLY PROGRESS</p>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+         <div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:var(--t1);"><span>💧 Water Tracker</span><span id="moWaterProgTxt" style="font-weight:700;">0 / 90 L</span></div>
+            <div class="w-bar" style="background:var(--s3); height:6px; border-radius:999px; overflow:hidden;"><div id="moWaterBar" class="w-fill" style="background:#3b8ef5; width:0%; height:100%; transition:width 0.5s;"></div></div>
+         </div>
+         <div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:var(--t1);"><span>📚 Reading Target</span><span id="moReadProgTxt" style="font-weight:700;">0 / 300 Pgs</span></div>
+            <div class="w-bar" style="background:var(--s3); height:6px; border-radius:999px; overflow:hidden;"><div id="moReadBar" class="w-fill" style="background:#f0b429; width:0%; height:100%; transition:width 0.5s;"></div></div>
+         </div>
+         <div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:var(--t1);"><span>💪 Workout Frequency</span><span id="moWktProgTxt" style="font-weight:700;">0 / 16</span></div>
+            <div class="w-bar" style="background:var(--s3); height:6px; border-radius:999px; overflow:hidden;"><div id="moWktBar" class="w-fill" style="background:#f04040; width:0%; height:100%; transition:width 0.5s;"></div></div>
+         </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="card-label">🏆 LIFETIME TOTALS</p>
+      <div class="lifetime-rows">
+        <div class="lt-row"><span>💧 Total Water Tracked</span><span id="ltWater">—</span></div>
+        <div class="lt-row"><span>📚 Total Pages Read</span><span id="ltReading">—</span></div>
+        <div class="lt-row"><span>💪 Total Workouts Logged</span><span id="ltWorkouts">—</span></div>
+        <div class="lt-row"><span>⭐ Total XP Accumulated</span><span id="ltTotalXP">—</span></div>
+      </div>
+    </div>
+
+    <div class="card danger-card">
+      <p class="card-label">⚠️ DANGER ZONE</p>
+      <p class="danger-desc">Permanently deletes all your progress and stats.</p>
+      <button class="danger-btn" onclick="hardReset()">Reset All Progress</button>
+    </div>
+  </section>
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-home" onclick="switchTab('home')"><span class="nav-em">🏠</span><span class="nav-lbl">Home</span></button>
+  <button class="nav-btn" id="nav-quests" onclick="switchTab('quests')"><span class="nav-em">🎯</span><span class="nav-lbl">Quests</span></button>
+  <button class="nav-btn" id="nav-character" onclick="switchTab('character')"><span class="nav-em">⚔️</span><span class="nav-lbl">Character</span></button>
+  <button class="nav-btn" id="nav-progress" onclick="switchTab('progress')"><span class="nav-em">📈</span><span class="nav-lbl">Progress</span></button>
+</nav>
+
+<script src="app.js"></script>
+</body>
+</html>
