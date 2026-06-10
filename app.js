@@ -42,19 +42,20 @@ document.addEventListener("DOMContentLoaded", () => {
   let healthScore = getNum("healthScore", 100);
   let dailyWater = getNum("dailyWater", 0);
   let dailySleep = getNum("dailySleep", 0);
+  let workedOutToday = getNum("workedOutToday", 0); // Daily frequency checker
 
   // Lifetime Stats
   let water = getNum("water", 0);
   let reading = getNum("reading", 0);
   let workouts = getNum("workouts", 0);
 
-  // Weekly Stats
+  // Weekly Stats (Tracks unique workout days)
   let wkWater = getNum("wkWater", 0);
   let wkReading = getNum("wkReading", 0);
   let wkWorkouts = getNum("wkWorkouts", 0);
   let wkXP = getNum("wkXP", 0);
 
-  // Monthly Stats
+  // Monthly Stats (Tracks unique workout days)
   let moWater = getNum("moWater", 0);
   let moReading = getNum("moReading", 0);
   let moWorkouts = getNum("moWorkouts", 0);
@@ -135,15 +136,17 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => alert("⚠️ Zero Day Detected: Strength, Vitality & Stamina have decreased by 1."), 1000);
       }
       
-      // Midnight Health Decay: Health drops by 50 points (Minimum 1)
+      // Midnight Health Decay
       healthScore = Math.max(1, healthScore - 50);
     }
 
     questState = {};
     actionCounts = {};
     undoStack = [];
-    dailyWater = 0; // Visuals reset, Health remains
-    dailySleep = 0; // Visuals reset, Health remains
+    dailyWater = 0;
+    dailySleep = 0;
+    workedOutToday = 0; // Clear frequency baseline for the new day
+    localStorage.setItem("workedOutToday", "0");
     localStorage.setItem("bossClaimed", "false");
     localStorage.setItem("lastLogin", today);
   }
@@ -175,6 +178,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ── 5. CORE FUNCTIONS ──
+  function getHealthScore() {
+    let wPct = Math.min(100, (dailyWater / 3.0) * 100);
+    let sPct = Math.min(100, (dailySleep / 7.0) * 100);
+    return Math.floor((wPct * 0.5) + (sPct * 0.5));
+  }
+
   function getXPMultiplier() {
     let s = Math.round(healthScore);
     if (s < 25) return 0.75;
@@ -182,6 +191,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (s > 65 && s <= 80) return 1.25;
     if (s > 80) return 1.5;
     return 1.0;
+  }
+
+  // Frequency logging rule (prevents logging multiple workout days within 24 hours)
+  function logWorkoutDay() {
+    if (workedOutToday === 0) {
+      workedOutToday = 1;
+      wkWorkouts++;
+      moWorkouts++;
+    }
   }
 
   function saveData() {
@@ -193,6 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("healthScore", healthScore);
     localStorage.setItem("dailyWater", dailyWater);
     localStorage.setItem("dailySleep", dailySleep);
+    localStorage.setItem("workedOutToday", workedOutToday);
     localStorage.setItem("water", water);
     localStorage.setItem("reading", reading);
     localStorage.setItem("workouts", workouts);
@@ -248,7 +267,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (el("xpText")) el("xpText").innerText = `${xp} / ${needed} XP`;
       if (el("xpFill")) el("xpFill").style.width = `${Math.min(100, (xp / needed) * 100)}%`;
       
-      // Health Score UI
       let displayHealth = Math.round(healthScore);
       let multi = getXPMultiplier();
       if (el("healthScoreDisplay")) el("healthScoreDisplay").innerText = displayHealth;
@@ -271,7 +289,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (el("totalDaysActive")) el("totalDaysActive").innerText = totalDays;
 
-      // Focus
       const pM = strength;
       const pE = (stamina + vitality) / 2;
       const pW = knowledgeGen;
@@ -293,19 +310,19 @@ document.addEventListener("DOMContentLoaded", () => {
       if (el("vitalityBar"))     el("vitalityBar").style.width     = `${(vitality     / maxBar) * 100}%`;
       if (el("staminaBar"))      el("staminaBar").style.width      = `${(stamina      / maxBar) * 100}%`;
 
-      // Progress Tab Charts
+      // Progress Tab Metrics (Shows target metric strings explicitly as 'Days')
       if (el("wkWaterProgTxt")) el("wkWaterProgTxt").innerText = `${wkWater.toFixed(1)} / 21 L`;
       if (el("wkWaterBar")) el("wkWaterBar").style.width = `${Math.min(100, (wkWater / 21) * 100)}%`;
       if (el("wkReadProgTxt")) el("wkReadProgTxt").innerText = `${wkReading} / 70 Pgs`;
       if (el("wkReadBar")) el("wkReadBar").style.width = `${Math.min(100, (wkReading / 70) * 100)}%`;
-      if (el("wkWktProgTxt")) el("wkWktProgTxt").innerText = `${wkWorkouts} / 4`;
+      if (el("wkWktProgTxt")) el("wkWktProgTxt").innerText = `${wkWorkouts} / 4 Days`;
       if (el("wkWktBar")) el("wkWktBar").style.width = `${Math.min(100, (wkWorkouts / 4) * 100)}%`;
 
       if (el("moWaterProgTxt")) el("moWaterProgTxt").innerText = `${moWater.toFixed(1)} / 90 L`;
       if (el("moWaterBar")) el("moWaterBar").style.width = `${Math.min(100, (moWater / 90) * 100)}%`;
       if (el("moReadProgTxt")) el("moReadProgTxt").innerText = `${moReading} / 300 Pgs`;
       if (el("moReadBar")) el("moReadBar").style.width = `${Math.min(100, (moReading / 300) * 100)}%`;
-      if (el("moWktProgTxt")) el("moWktProgTxt").innerText = `${moWorkouts} / 16`;
+      if (el("moWktProgTxt")) el("moWktProgTxt").innerText = `${moWorkouts} / 16 Days`;
       if (el("moWktBar")) el("moWktBar").style.width = `${Math.min(100, (moWorkouts / 16) * 100)}%`;
 
     } catch (e) {
@@ -328,7 +345,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function saveSnapshot() {
     const s = {
-      xp, level, totalXP, healthScore, dailyWater, dailySleep,
+      xp, level, totalXP, healthScore, dailyWater, dailySleep, workedOutToday,
       water, reading, workouts,
       wkWater, wkReading, wkWorkouts, wkXP,
       moWater, moReading, moWorkouts, moXP,
@@ -347,6 +364,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const s = undoStack.pop();
     xp = s.xp; level = s.level; totalXP = s.totalXP;
     healthScore = s.healthScore || 100; dailyWater = s.dailyWater || 0; dailySleep = s.dailySleep || 0;
+    workedOutToday = s.workedOutToday || 0;
     water = s.water; reading = s.reading; workouts = s.workouts;
     wkWater = s.wkWater; wkReading = s.wkReading; wkWorkouts = s.wkWorkouts; wkXP = s.wkXP;
     moWater = s.moWater; moReading = s.moReading; moWorkouts = s.moWorkouts; moXP = s.moXP;
@@ -434,27 +452,26 @@ document.addEventListener("DOMContentLoaded", () => {
     const factor = Math.pow(0.75, count);
     const g = 0.1 * factor;
     
-    // Apply Dynamic XP Multiplier
     let earnedXP = Math.max(1, Math.round(baseXP * factor));
     earnedXP = Math.round(earnedXP * getXPMultiplier());
 
     if (btn) showFloatingXP(btn, earnedXP);
 
-    // Baseline Health healing (1 L Water = 16.66 Health, 1 hr Sleep = 7.14 Health)
+    // Baseline Health healing
     if (id === "t_water")       { water += 0.5; wkWater += 0.5; moWater += 0.5; dailyWater += 0.5; weeklyProgress.water += 0.5; healthScore = Math.min(100, healthScore + 8.33); }
     if (id === "t_water_micro") { water += 0.1; wkWater += 0.1; moWater += 0.1; dailyWater += 0.1; weeklyProgress.water += 0.1; healthScore = Math.min(100, healthScore + 1.66); }
     if (id === "t_sleep")       { dailySleep += 0.5; weeklyProgress.sleep += 0.5; healthScore = Math.min(100, healthScore + 3.57); }
     if (id === "t_sleep_micro") { dailySleep += 0.25; weeklyProgress.sleep += 0.25; healthScore = Math.min(100, healthScore + 1.78); }
 
-    // Stat updates
+    // Exercise Tasks trigger distinct day increments 
     if (id === "t_readGen")  { reading += 10; wkReading += 10; moReading += 10; knowledgeGen += g; weeklyProgress.readGen += 10; }
     if (id === "t_readFin")  { reading += 10; wkReading += 10; moReading += 10; knowledgeFin += g; weeklyProgress.readFin += 10; }
-    if (id === "t_pushups")  { strength += g; workouts++; wkWorkouts++; moWorkouts++; weeklyProgress.pushups += 10; }
-    if (id === "t_pullups")  { strength += 0.15 * factor; workouts++; wkWorkouts++; moWorkouts++; } 
-    if (id === "t_bb_curl" || id === "t_db_curl") { strength += g; workouts++; wkWorkouts++; moWorkouts++; weeklyProgress.curls += 10; }
-    if (id === "t_squats")   { strength += g; vitality += g; workouts++; wkWorkouts++; moWorkouts++; weeklyProgress.squats += 10; }
+    if (id === "t_pushups")  { strength += g; workouts++; logWorkoutDay(); weeklyProgress.pushups += 10; }
+    if (id === "t_pullups")  { strength += 0.15 * factor; workouts++; logWorkoutDay(); } 
+    if (id === "t_bb_curl" || id === "t_db_curl") { strength += g; workouts++; logWorkoutDay(); weeklyProgress.curls += 10; }
+    if (id === "t_squats")   { strength += g; vitality += g; workouts++; logWorkoutDay(); weeklyProgress.squats += 10; }
     if (id === "t_walk")     { stamina  += g; vitality += g; weeklyProgress.walk += 1;  }
-    if (id === "t_skipping") { stamina  += g; workouts++; wkWorkouts++; moWorkouts++; weeklyProgress.skips += 50; }
+    if (id === "t_skipping") { stamina  += g; workouts++; logWorkoutDay(); weeklyProgress.skips += 50; }
 
     xp += earnedXP; totalXP += earnedXP; wkXP += earnedXP; moXP += earnedXP;
     processLevelUp(); updateUI(); renderEverything(); saveData();
@@ -465,14 +482,13 @@ document.addEventListener("DOMContentLoaded", () => {
     saveSnapshot();
     questState[id] = true;
 
-    // Apply Dynamic XP Multiplier for Daily Quests too
     let earnedXP = Math.round(baseXP * getXPMultiplier());
     if (el) showFloatingXP(el, earnedXP);
 
-    if (id === "d_pushups")                          { strength += 0.1; workouts++; wkWorkouts++; moWorkouts++; weeklyProgress.pushups += 20; }
-    if (id === "d_db_curl" || id === "d_bb_curl")    { strength += 0.1; workouts++; wkWorkouts++; moWorkouts++; weeklyProgress.curls += 15; }
+    if (id === "d_pushups")                          { strength += 0.1; workouts++; logWorkoutDay(); weeklyProgress.pushups += 20; }
+    if (id === "d_db_curl" || id === "d_bb_curl")    { strength += 0.1; workouts++; logWorkoutDay(); weeklyProgress.curls += 15; }
     if (id === "d_walk3km")                          { stamina  += 0.1; weeklyProgress.walk += 3;  }
-    if (id === "d_skipping")                         { stamina  += 0.1; workouts++; wkWorkouts++; moWorkouts++; weeklyProgress.skips += 200;}
+    if (id === "d_skipping")                         { stamina  += 0.1; workouts++; logWorkoutDay(); weeklyProgress.skips += 200;}
 
     xp += earnedXP; totalXP += earnedXP; wkXP += earnedXP; moXP += earnedXP;
     processLevelUp(); updateUI(); renderEverything(); saveData();
@@ -483,7 +499,6 @@ document.addEventListener("DOMContentLoaded", () => {
     saveSnapshot();
     localStorage.setItem("bossClaimed", "true");
     
-    // Boss XP scales with health too
     let earnedXP = Math.round(200 * getXPMultiplier());
     const btn = document.getElementById("bossClaimBtn");
     showFloatingXP(btn, earnedXP);
